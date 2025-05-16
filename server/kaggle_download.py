@@ -2,7 +2,7 @@ import os
 import zipfile
 from kaggle.api.kaggle_api_extended import KaggleApi
 
-def download_kaggle_competition(competition_name: str, destination: str = "data", unzip: bool = True):
+def download_kaggle_competition(competition_name: str, destination: str = ".kaggle/data", unzip: bool = True):
     """
     Downloads files from a Kaggle competition.
 
