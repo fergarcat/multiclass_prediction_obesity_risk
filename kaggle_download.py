@@ -2,39 +2,40 @@ import os
 import zipfile
 from kaggle.api.kaggle_api_extended import KaggleApi
 
-def descargar_competencia_kaggle(nombre_competencia: str, destino: str = ".kaggle\data", unzip: bool = True):
+def download_kaggle_competition(competition_name: str, destination: str = "data", unzip: bool = True):
     """
-    Descarga los archivos de una competencia de Kaggle.
+    Downloads files from a Kaggle competition.
 
-    Parámetros:
-    - nombre_competencia: el identificador corto de la competencia (ej. 'playground-series-s4e2')
-    - destino: carpeta donde se guardarán los archivos (por defecto 'data')
-    - unzip: si se desea descomprimir automáticamente los archivos (por defecto True)
+    Parameters:
+    - competition_name: short competition identifier (e.g., 'playground-series-s4e2')
+    - destination: folder where files will be saved (default is 'data')
+    - unzip: whether to automatically unzip the downloaded files (default is True)
     """
-    # Configurar acceso a kaggle.json
+    # Set environment variable to locate kaggle.json credentials
     os.environ["KAGGLE_CONFIG_DIR"] = os.path.expanduser("~/.kaggle")
 
-    # Inicializar API
+    # Initialize Kaggle API client
     api = KaggleApi()
     api.authenticate()
 
-    # Crear carpeta si no existe
-    os.makedirs(destino, exist_ok=True)
+    # Create destination directory if it doesn't exist
+    os.makedirs(destination, exist_ok=True)
 
-    # Descargar archivos ZIP
-    print(f"Descargando competencia: {nombre_competencia}...")
-    api.competition_download_files(nombre_competencia, path=destino)
-    print(f"✅ Archivos descargados en ./{destino}")
+    # Download competition files as a ZIP archive
+    print(f"Downloading competition: {competition_name}...")
+    api.competition_download_files(competition_name, path=destination)
+    print(f"✅ Files downloaded to ./{destination}")
 
-    # Descomprimir si se indica
+    # Unzip files if requested
     if unzip:
-        zip_path = os.path.join(destino, f"{nombre_competencia}.zip")
-        print(f"Descomprimiendo {zip_path}...")
+        zip_path = os.path.join(destination, f"{competition_name}.zip")
+        print(f"Unzipping {zip_path}...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(destino)
+            zip_ref.extractall(destination)
+        # Remove the zip file after extraction
         os.remove(zip_path)
-        print("✅ Archivos descomprimidos")
+        print("✅ Files unzipped successfully")
 
-# Ejemplo de uso
+# Example usage
 if __name__ == "__main__":
-    descargar_competencia_kaggle("playground-series-s4e2")
+    download_kaggle_competition("playground-series-s4e2")
