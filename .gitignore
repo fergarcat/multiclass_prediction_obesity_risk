@@ -175,3 +175,11 @@ cython_debug/
 
 # Github Workflows
 .github/workflows/
+
+# Kaggle
+kaggle.json
+.kaggle/
+.kaggle/competitions/
+.kaggle/datasets/
+.kaggle/kernels/
+.kaggle/notebooks/
