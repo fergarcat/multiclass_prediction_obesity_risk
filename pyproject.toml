@@ -1,10 +1,11 @@
 [project]
-name = "p7-1"
+name = "multi-class_prediction_obesity_risk"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "dash>=3.0.4",
     "fastapi>=0.115.12",
+    "kaggle>=1.7.4.5",
     "matplot>=0.1.9",
     "pandas>=2.2.3",
     "scikit-learn>=1.6.1",
