@@ -1,0 +1,12 @@
+[project]
+name = "p7-1"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "dash>=3.0.4",
+    "fastapi>=0.115.12",
+    "matplot>=0.1.9",
+    "pandas>=2.2.3",
+    "scikit-learn>=1.6.1",
+    "seaborn>=0.13.2",
+]
