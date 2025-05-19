@@ -3,10 +3,10 @@ name: ML MultiClassification
 
 # Trigger the workflow on push or pull request to the 'main' branch
 on:
-#   push:
-#     branches: [main]
-  pull_request:
+  push:
     branches: [main]
+  pull_request:
+    branches: [main, dev]
 
 jobs:
   build-and-test:
