@@ -1,11 +1,8 @@
 def transform_csv_row(row):
     row['Age'] = int(row['Age'])  # Age in years
 
-
     # BMI calculation
-    height_m = row['Height'] 
-    weight_kg = row['Weight'] 
-    row['BMI'] = round(weight_kg / (height_m ** 2), 2)
+    row['BMI'] = round(weight / (height ** 2), 2)
 
     # Binary yes/no to bool
     yes_no_cols = ['family_history_with_overweight', 'FAVC', 'SCC']
