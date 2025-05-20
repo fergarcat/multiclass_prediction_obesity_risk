@@ -1,7 +1,7 @@
 def transform_csv_row(row):
     row['Age'] = int(row['Age'])  # Age in years
     row['Height'] = int(row['Height'] * 100)  # Height in cm
-    row['Weight'] = int(row['Weight'] * 100)  # Weight in gr
+    row['Weight'] = int(row['Weight'] * 1000)  # Weight in gr
 
     # BMI calculation
     height_m = row['Height'] / 100
