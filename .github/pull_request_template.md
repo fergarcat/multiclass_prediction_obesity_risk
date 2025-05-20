@@ -23,9 +23,10 @@ Describe brevemente qué cambios incluye esta PR y por qué son necesarios.
 
 Indica los pasos para verificar los cambios localmente:
 
-```bash
+```python
 # ejemplo
 python main.py
+```
 
 ## 📎 Relacionado con
 Closes #Nº_issue
