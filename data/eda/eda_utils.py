@@ -1,11 +1,10 @@
 def transform_csv_row(row):
     row['Age'] = int(row['Age'])  # Age in years
-    row['Height'] = int(row['Height'] * 100)  # Height in cm
-    row['Weight'] = int(row['Weight'] * 1000)  # Weight in gr
+
 
     # BMI calculation
-    height_m = row['Height'] / 100
-    weight_kg = row['Weight'] / 1000
+    height_m = row['Height'] 
+    weight_kg = row['Weight'] 
     row['BMI'] = round(weight_kg / (height_m ** 2), 2)
 
     # Binary yes/no to bool
