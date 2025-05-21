@@ -181,3 +181,5 @@ kaggle.json
 .kaggle/datasets/
 .kaggle/kernels/
 .kaggle/notebooks/
+#Catboost
+catboost_info/
