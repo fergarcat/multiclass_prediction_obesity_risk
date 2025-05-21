@@ -12,7 +12,8 @@ def download_kaggle_competition(competition_name: str, destination: str = "../da
     - unzip: whether to automatically unzip the downloaded files (default is True)
     """
     # Set environment variable to locate kaggle.json credentials
-    os.environ["KAGGLE_CONFIG_DIR"] = os.path.expanduser("~/.kaggle")
+
+    os.environ["KAGGLE_CONFIG_DIR"] = os.path.join(os.path.expanduser("~"), ".kaggle")
 
     # Initialize Kaggle API client
     api = KaggleApi()
@@ -38,4 +39,8 @@ def download_kaggle_competition(competition_name: str, destination: str = "../da
 
 # Example usage
 if __name__ == "__main__":
-    download_kaggle_competition("playground-series-s4e2")
+    print("Running Kaggle Download from main()...")
+    # Cambia a ruta absoluta de tu proyecto si quieres:
+    destination_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", ".kaggle"))
+    print(f"Destination path: {destination_path}")
+    download_kaggle_competition("playground-series-s4e2",destination = destination_path)
