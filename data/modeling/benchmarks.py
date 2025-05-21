@@ -72,3 +72,43 @@ def ml_benchmarks(X, y, test_size=0.2, random_state=42):
     print(tabulate(results_df, headers='keys', tablefmt='pretty', showindex=False))
 
     return results_df
+
+
+def custom_ml_benchmarks(X, y, models_dict, test_size=0.2, random_state=42):
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    import pandas as pd
+    import time
+    from tabulate import tabulate
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    results = []
+
+    for name, pipeline in models_dict.items():
+        start_time = time.time()
+        pipeline.fit(X_train, y_train)
+        train_time = time.time() - start_time
+
+        y_train_pred = pipeline.predict(X_train)
+        y_test_pred = pipeline.predict(X_test)
+
+        train_acc = accuracy_score(y_train, y_train_pred)
+        test_acc = accuracy_score(y_test, y_test_pred)
+        overfitting = train_acc - test_acc
+
+        results.append({
+            'Model': name,
+            'Accuracy': test_acc,
+            'Precision': precision_score(y_test, y_test_pred, average='weighted', zero_division=0),
+            'Recall': recall_score(y_test, y_test_pred, average='weighted', zero_division=0),
+            'F1-Score': f1_score(y_test, y_test_pred, average='weighted', zero_division=0),
+            'Train Time (s)': round(train_time, 4),
+            'Overfitting': round(overfitting, 4)
+        })
+
+    results_df = pd.DataFrame(results).sort_values(by='F1-Score', ascending=False)
+    print(tabulate(results_df, headers='keys', tablefmt='pretty', showindex=False))
+    return results_df
