@@ -40,6 +40,5 @@ def download_kaggle_competition(competition_name: str="playground-series-s4e2", 
 # Example usage
 if __name__ == "__main__":
     print("Running Kaggle Download from main()...")
-    # Cambia a ruta absoluta de tu proyecto si quieres:
     print(f"Destination path: {destination_path}")
     download_kaggle_competition(destination = destination_path)
