@@ -43,6 +43,7 @@ dependencies = [
     "nest-asyncio==1.6.0",
     "nh3==0.2.21",
     "numpy==2.2.5",
+    "optuna>=4.3.0",
     "packaging==25.0",
     "pandas==2.2.3",
     "pillow==11.2.1",
