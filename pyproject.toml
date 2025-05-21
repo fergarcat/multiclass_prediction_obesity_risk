@@ -16,6 +16,7 @@ dependencies = [
     "cycler==0.12.1",
     "dash==3.0.4",
     "docutils==0.21.2",
+    "dotenv>=0.9.9",
     "fastapi==0.115.12",
     "flask==3.0.3",
     "fonttools==4.58.0",
