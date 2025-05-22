@@ -1,9 +1,19 @@
+import logging
+from .core.config import settings, setup_logging
+
+# --- LLAMADA A LA CONFIGURACIÓN DE LOGGING ---
+LOGGING_LEVEL = logging.INFO
+setup_logging(log_level=LOGGING_LEVEL)
+# -----------------------------------------
+
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from .core.config import settings
 from .api.router import router as api_router
 from .services.model_loader import load_ml_models, unload_ml_models
 from .services.db_service import init_supabase_client, close_supabase_client
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
