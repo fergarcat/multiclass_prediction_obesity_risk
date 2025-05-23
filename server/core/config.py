@@ -4,9 +4,6 @@ import logging
 import sys
 
 PROJECT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-
-
-
 class Settings(BaseSettings):
     PROJECT_NAME: str = "API de Clasificación de Riesgo de Obesidad"
     PROJECT_VERSION: str = "0.1.0"

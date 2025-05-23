@@ -1,17 +1,26 @@
-from client.services.queries import get_field_data
+import pandas as pd
+from client.services.db import engine
 
-def get_fields_config():
-    columns = get_field_data()
+def get_field_data():
+    query = "SELECT id, label, data_type FROM public.app_features WHERE active = TRUE AND label NOT IN ('NObeyesdad') ORDER BY id;"
+    df = pd.read_sql(query, engine)
 
     return {
-        col: {
-            "label": col.replace("_", " ").capitalize(),
-            "type": "select" if col in ['gender', 'family_history_with_overweight', 'FAVC', 'CAEC', 'SCC', 'CALC'] else (
-                     "number" if col in ['age', 'height', 'weight', 'FCVC', 'NCP', 'CH2O', 'FAF', 'TUE'] else "text"),
-            "options": ['yes', 'no'] if col in ['FAVC', 'SCC', 'family_history_with_overweight']
-                       else ['Male', 'Female'] if col == 'gender'
-                       else ['no', 'Sometimes', 'Frequently', 'Always'] if col in ['CAEC', 'CALC']
-                       else None
+        row['id']: {
+            "id": row['id'],
+            "label": row['label'],
+            "type": (
+                "select" if (
+                    row['data_type'] == 'boolean' or
+                    (row['data_type'] == 'text' and row['label'].lower() in ['gender', 'calc', 'caec'])
+                ) else "number"
+            ),
+            "options": (
+                ['yes', 'no'] if row['data_type'] == 'boolean'
+                else ['Male', 'Female'] if row['label'].lower() == 'gender'
+                else ['Always', 'Frequently', 'Sometimes', 'no'] if row['label'].lower() in ['calc', 'caec']
+                else []
+            )
         }
-        for col in columns if col != "id"
+        for _, row in df.iterrows()
     }

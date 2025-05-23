@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, text
 from urllib.parse import quote_plus
 
+
 USER = "postgres.pfhjkvnfjfpgxhwoupwz"
 PASSWORD = "R@RydQxyik5A7a)"
 HOST = "aws-0-eu-west-2.pooler.supabase.com"
