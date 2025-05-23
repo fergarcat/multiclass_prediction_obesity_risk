@@ -22,9 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 from xgboost import XGBClassifier
 from sklearn.metrics import make_scorer, f1_score
-
-
-from tabulate import tabulate  # pip install tabulate
+from tabulate import tabulate  
 
 
 def ml_benchmarks(X, y, test_size=0.2, random_state=42):
@@ -124,77 +122,80 @@ def custom_ml_benchmarks(X, y, models_dict, test_size=0.2, random_state=42):
 
 
 
-def optimize_xgboost(X, y, n_trials=30, cv=3, test_size=0.2, random_state=42):
-    def objective(trial):
-        params = {
-            'n_estimators': trial.suggest_int('n_estimators', 50, 300),
-            'max_depth': trial.suggest_int('max_depth', 3, 12),
-            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
-            'subsample': trial.suggest_float('subsample', 0.5, 1.0),
-            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
-            'gamma': trial.suggest_float('gamma', 0, 5),
-            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-            'random_state': random_state,
-            'use_label_encoder': False,
-            'eval_metric': 'mlogloss'
-        }
+def optimize_xgboost(X, y, n_trials=30, test_size=0.2, random_state=42):
+    from sklearn.model_selection import train_test_split
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.metrics import accuracy_score
+    import optuna
+    from xgboost import XGBClassifier
 
-        pipe = Pipeline([
-            ('scaler', StandardScaler()),
-            ('xgb', XGBClassifier(**params))
-        ])
-
-        score = cross_val_score(
-            pipe, X, y,
-            scoring=make_scorer(f1_score, average='weighted'),
-            cv=cv,
-            n_jobs=-1
-        ).mean()
-
-        return score
-
-    study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=n_trials)
-
-    best_params = study.best_params
-    best_params.update({
-        'random_state': random_state,
-        'use_label_encoder': False,
-        'eval_metric': 'mlogloss'
-    })
-
-    # Split data for final evaluation
+    # Split the data
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
 
-    final_pipeline = Pipeline([
+    # Objective function for Optuna
+    def objective(trial):
+        params = {
+            'n_estimators': trial.suggest_int('n_estimators', 50, 300),
+            'max_depth': trial.suggest_int('max_depth', 3, 10),
+            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+            'subsample': trial.suggest_float('subsample', 0.5, 1.0),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+            'gamma': trial.suggest_float('gamma', 0, 5),
+            'reg_alpha': trial.suggest_float('reg_alpha', 0, 1),
+            'reg_lambda': trial.suggest_float('reg_lambda', 0, 1),
+            'use_label_encoder': False,
+            'eval_metric': 'mlogloss'
+        }
+
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('classifier', XGBClassifier(**params))
+        ])
+
+        pipeline.fit(X_train, y_train)
+        preds = pipeline.predict(X_test)
+        return accuracy_score(y_test, preds)
+
+    # Run Optuna
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=n_trials)
+
+    # Train final model with best params
+    best_params = study.best_params
+    best_params.update({'use_label_encoder': False, 'eval_metric': 'mlogloss'})
+
+    optuna_pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('xgb', XGBClassifier(**best_params))
+        ('classifier', XGBClassifier(**best_params))
     ])
 
-    start_time = time.time()
-    final_pipeline.fit(X_train, y_train)
-    train_time = time.time() - start_time
+    optuna_pipeline.fit(X_train, y_train)
 
-    y_train_pred = final_pipeline.predict(X_train)
-    y_test_pred = final_pipeline.predict(X_test)
+    # Print summary table
+    import time
+    from sklearn.metrics import precision_score, recall_score, f1_score
+    from tabulate import tabulate
 
-    train_acc = accuracy_score(y_train, y_train_pred)
-    test_acc = accuracy_score(y_test, y_test_pred)
-    overfitting = round(train_acc - test_acc, 4)
+    y_pred = optuna_pipeline.predict(X_test)
+    train_pred = optuna_pipeline.predict(X_train)
 
-    result = {
-        'Model': 'XGBoost + Optuna',
-        'Accuracy': accuracy_score(y_test, y_test_pred),
-        'Precision': precision_score(y_test, y_test_pred, average='weighted', zero_division=0),
-        'Recall': recall_score(y_test, y_test_pred, average='weighted', zero_division=0),
-        'F1-Score': f1_score(y_test, y_test_pred, average='weighted', zero_division=0),
-        'Train Time (s)': round(train_time, 4),
-        'Overfitting': overfitting
-    }
+    train_acc = accuracy_score(y_train, train_pred)
+    test_acc = accuracy_score(y_test, y_pred)
+    overfitting = train_acc - test_acc
 
-    # Mostrar resultados en tabla
-    print(tabulate([result], headers='keys', tablefmt='pretty'))
+    results = [{
+        'Model': 'XGBoost (Optuna)',
+        'Accuracy': test_acc,
+        'Precision': precision_score(y_test, y_pred, average='weighted'),
+        'Recall': recall_score(y_test, y_pred, average='weighted'),
+        'F1-Score': f1_score(y_test, y_pred, average='weighted'),
+        'Overfitting': round(overfitting, 4)
+    }]
 
-    return final_pipeline, study
+
+    # Return everything needed
+    return optuna_pipeline, study, results, X_train, X_test, y_train, y_test
+    
