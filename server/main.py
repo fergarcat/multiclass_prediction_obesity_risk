@@ -1,37 +1,63 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-import pickle
-import os
+import logging
+from .core.config import settings, setup_logging
+
+# --- LLAMADA A LA CONFIGURACIÓN DE LOGGING ---
+LOGGING_LEVEL = logging.INFO
+setup_logging(log_level=LOGGING_LEVEL)
+# -----------------------------------------
+
+from fastapi import FastAPI
+from server.api.router import router as api_router
+from contextlib import asynccontextmanager
+from .core.config import settings
+from .api.router import router as api_router
+# from .services.model_loader import load_ml_models, unload_ml_models
+# from .services.db_service import init_supabase_client, close_supabase_client
 
 app = FastAPI()
+app.include_router(api_router)
 
-# CORS: permitir peticiones desde la app Dash
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # puedes restringirlo a "http://localhost:8050" si prefieres
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- Eventos de Inicio (Startup) ---
+    print(f"INFO:     Iniciando la aplicación: {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
+
+    print("INFO:     Cargando modelos de Machine Learning (simulado)...")
+    # try:
+    #     # load_ml_models() # Llama a nuestra función (simulada)
+    # except Exception as e:
+    #     print(f"CRITICAL: Fallo al cargar modelos de ML (simulado): {e}")
+
+    # print("INFO:     Inicializando cliente Supabase (simulado)...")
+    # try:
+    #     await init_supabase_client() # Llama a nuestra función (simulada)
+    # except Exception as e:
+    #     print(f"ERROR:    Fallo al inicializar cliente Supabase (simulado): {e}")
+
+    yield # La aplicación se ejecuta aquí
+
+    # --- Eventos de Apagado (Shutdown) ---
+    print("INFO:     Cerrando la aplicación FastAPI...")
+    unload_ml_models()
+    await close_supabase_client()
+    print("INFO:     Aplicación cerrada limpiamente (simulado).")
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION,
+    description="API para la predicción de riesgo de obesidad.",
+    lifespan=lifespan
 )
 
-# Cargar el modelo
-model_path = os.path.join(os.path.dirname(__file__), "obesity_model.pkl")
-try:
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)
-except Exception as e:
-    raise RuntimeError(f"❌ Error cargando el modelo: {e}")
+# Incluir el router de la API
+app.include_router(api_router) # Aquí están nuestros endpoints como /health
 
-@app.get("/")
-def read_root():
-    return {"message": "FastAPI is working"}
+@app.get("/", tags=["Root"])
+async def read_root():
+    return {
+        "message": f"Bienvenido a {settings.PROJECT_NAME}",
+        "docs": "/docs",
+        "health": "/health"
+    }
 
-@app.post("/predict")
-def predict(data: dict):
-    try:
-        df = pd.DataFrame([data])
-        prediction = model.predict(df)[0]
-        return {"prediction": prediction}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Para poder ejecutar uvicorn server.main:app --reload desde la raíz del proyecto

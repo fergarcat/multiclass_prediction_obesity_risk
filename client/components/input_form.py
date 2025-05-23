@@ -1,65 +1,56 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-from client.config.fields_config import get_fields_config
+from client.config.fields_config import get_field_data
 
 def generate_input_fields():
-    fields = get_fields_config()
+    fields = get_field_data()
 
-    # Dividir los campos en tres grupos lógicos (ajústalo si cambian los campos)
-    group1 = ['gender', 'age', 'bmi']
-    group2 = ['family_history_with_overweight', 'FAVC', 'FCVC', 'NCP', 'CAEC']
-    group3 = ['CH2O', 'SCC', 'FAF', 'TUE', 'CALC']
+    input_elements = []
 
-    def render_fields(field_ids):
-        elements = []
-        for field_id in field_ids:
-            config = fields[field_id]
-            label = html.Label(config["label"], className="fw-bold mb-1")
+    for i, (field_id, field_config) in enumerate(fields.items()):
+        label_text = field_config["label"]
+        description_text = field_config.get("description", "")  # description opcional
+        label = html.Label(label_text, className="fw-bold mb-1")
 
-            if config["type"] == "select":
-                input_el = dcc.Dropdown(
-                    id=field_id,
-                    options=[{"label": opt, "value": opt} for opt in config["options"]],
-                    placeholder=config["label"],
-                    className="mb-2"
-                )
-            else:
-                input_el = dcc.Input(
-                    id=field_id,
-                    type=config["type"],
-                    placeholder=config["label"],
-                    debounce=True,
-                    className="form-control"
-                )
-            elements.append(html.Div([label, input_el], className="mb-3"))
-        return elements
+        if field_config["type"] == "select":
+            input_el = dcc.Dropdown(
+                id=f"input-{i}",
+                options=[{"label": opt, "value": opt} for opt in field_config["options"]],
+                placeholder=f"Seleccione {label_text}",
+                className="mb-1"
+            )
+        else:
+            input_el = dcc.Input(
+                id=f"input-{i}",
+                type="number",
+                placeholder=f"Ingrese {label_text}",
+                debounce=True,
+                className="form-control"
+            )
+
+        description_el = html.Small(description_text, className="text-muted")
+
+        input_elements.append(html.Div([label, input_el, description_el], className="mb-3"))
+
+    # Dividir en columnas (igual que antes)
+    col_count = len(input_elements)
+    third = col_count // 3 + (1 if col_count % 3 else 0)
+    layout = dbc.Row([
+        dbc.Col(input_elements[:third], md=4, xs=12),
+        dbc.Col(input_elements[third:2*third], md=4, xs=12),
+        dbc.Col(input_elements[2*third:], md=4, xs=12),
+    ], className="gx-4", style={"minHeight": "60vh"})
 
     return dbc.Container([
         html.H2("Formulario de Evaluación de Obesidad", className="text-center my-4"),
-
-        dbc.Row([
-            dbc.Col(html.Div(render_fields(group1)), md=4, xs=12),
-            dbc.Col(html.Div(render_fields(group2)), md=4, xs=12),
-            dbc.Col(html.Div(render_fields(group3)), md=4, xs=12),
-        ], className="gx-4", style={"minHeight": "60vh"}),
-
-        dbc.Row([
-            dbc.Col(dbc.Button("Enviar evaluación", id="submit-button", color="warning", className="w-100 mt-2 fw-bold"), width=12),
-        ]),
-
-        dbc.Row([
-            dbc.Col(html.Div(id="submission-status", className="alert alert-light mt-4 text-center fw-bold"), width=12)
-        ]),
-
+        layout,
         dbc.Row([
             dbc.Col(
-                html.Div([
-                    html.Div(id="prediction-result", className="alert alert-warning text-center fw-bold", style={"fontSize": "20px"}),
-                    dbc.Button("Nuevo estudio", id="reset-form", color="secondary", className="mt-2")
-                ],
-                id="prediction-bubble",
-                className="mt-4 p-3 rounded shadow-sm",
-                style={"display": "none", "backgroundColor": "#fff8e1"})
+                dbc.Button("Predecir", id="predict-btn", color="primary", className="w-100 mt-2 fw-bold"),
+                width=12
             )
+        ]),
+        dbc.Row([
+            dbc.Col(html.Div(id="prediction-bubble", className="mt-4"), width=12)
         ])
     ], fluid=True)
