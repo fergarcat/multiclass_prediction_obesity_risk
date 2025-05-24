@@ -1,35 +1,17 @@
+# client/app.py
 import dash
-from dash import html
 import dash_bootstrap_components as dbc
-from client.components.input_form import generate_input_fields
+from client.components.input_form import create_input_form_layout
 from client.callbacks.form_callbacks import register_callbacks
 
-GRAY_BG = "#F8F9FA"
-PERSIMON = "#FFB347"
+# Inicializa tu app Dash con un tema de Bootstrap
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
-app.title = "Predicción de Riesgo de Obesidad"
-server = app.server
+# Define el layout de la aplicación
+app.layout = create_input_form_layout()
 
-app.layout = html.Div(
-    style={'backgroundColor': GRAY_BG, 'padding': '10px', 'minHeight': '100vh'},
-    children=[
-        dbc.NavbarSimple(
-            brand="Predicción de Obesidad",
-            brand_href="#",
-            color="warning",
-            dark=False,
-            className="mb-4 shadow-sm"
-        ),
-        generate_input_fields(),
-        html.Footer(
-            html.Div("© 2025 Proyecto ML - Universidad", className="text-center text-muted mt-4 pb-2"),
-            className="bg-light mt-5 pt-3"
-        ),
-    ]
-)
-
+# Registra todos los callbacks
 register_callbacks(app)
 
-if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=8050)
+if __name__ == '__main__':
+    app.run_server(debug=True, port=8050)
