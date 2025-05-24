@@ -3,7 +3,7 @@ from ..core.config import settings
 from ..model.prediction_model import PredictionResponse
 import logging
 import pandas as pd
-from supabase import create_client, Client # Asegúrate que 'supabase' está instalado
+from supabase import create_client, Client
 
 _supabase_client: Client | None = None
 
@@ -15,20 +15,24 @@ binary_db_map = {"yes": 1, "no": 0}
 caec_db_map = {"Always": 3, "Frequently": 2, "Sometimes": 1, "no": 0} 
 calc_db_map = {"Always": 3, "Frequently": 2, "Sometimes": 1, "no": 0} 
 
+# *** NUEVO MAPA PARA MTRANS ***
+# Asegúrate de que estos números (0-4) son los que quieres para tu análisis o lógica de DB.
+mtrans_db_map = {
+    "Public_Transportation": 0,
+    "Walking": 1,
+    "Automobile": 2,
+    "Bike": 3,
+    "Motorbike": 4
+}
+
 nobeyesdad_label_to_int_map = { 
-    "Insufficient_Weight": 0,
-    "Normal_Weight": 1,
-    "Overweight_Level_I": 2,
-    "Overweight_Level_II": 3,
-    "Obesity_Type_I": 4,
-    "Obesity_Type_II": 5,
-    "Obesity_Type_III": 6
+    "Insufficient_Weight": 0, "Normal_Weight": 1, "Overweight_Level_I": 2,
+    "Overweight_Level_II": 3, "Obesity_Type_I": 4, "Obesity_Type_II": 5, "Obesity_Type_III": 6
 }
 # ====================================================================
 
 
 async def init_supabase_client():
-    """Inicializa el cliente de Supabase."""
     global _supabase_client
     if settings.SUPABASE_URL and settings.SUPABASE_KEY:
         try:
@@ -38,11 +42,10 @@ async def init_supabase_client():
             logging.error(f"Error inicializando cliente Supabase: {e}")
             _supabase_client = None
     else:
-        logging.warning("SUPABASE_URL o SUPABASE_KEY no configurados. La funcionalidad de Supabase está deshabilitada.")
+        logging.warning("SUPABASE_URL o SUPABASE_KEY no configurados. La funcionalidad de SupABASE está deshabilitada.") # Corrección de SUPABASE
         _supabase_client = None
 
 async def close_supabase_client():
-    """Cierra la conexión con Supabase."""
     global _supabase_client
     if _supabase_client:
         logging.info("Cerrando conexión Supabase.")
@@ -54,16 +57,11 @@ def get_supabase_client() -> Client:
     return _supabase_client
 
 async def save_prediction_to_db(prediction_data: PredictionResponse):
-    """
-    Guarda la predicción en la tabla de Supabase, asegurando que los tipos de datos
-    coincidan con el schema de la tabla (especialmente para integers/smallints).
-    """
     supabase_client_instance = get_supabase_client()
     input_payload = prediction_data.input_data
 
     try:
-        # Determinar el valor para 'nobeyesdad'
-        nobeyesdad_value = -1 # Valor por defecto si no se puede convertir/mapear
+        nobeyesdad_value = -1 
         if isinstance(prediction_data.prediction, (int, float)) or \
            (isinstance(prediction_data.prediction, str) and prediction_data.prediction.isdigit()):
             try:
@@ -72,53 +70,47 @@ async def save_prediction_to_db(prediction_data: PredictionResponse):
             except ValueError:
                 logging.warning(f"No se pudo convertir la predicción '{prediction_data.prediction}' a entero directamente.")
         
-        if nobeyesdad_value == -1: # Si no fue un número directo o falló la conversión
+        if nobeyesdad_value == -1: 
             nobeyesdad_value = nobeyesdad_label_to_int_map.get(str(prediction_data.prediction), -1)
             logging.info(f"Predicción '{prediction_data.prediction}' mapeada a {nobeyesdad_value} usando nobeyesdad_label_to_int_map.")
 
-
-        # Preparar los datos para insertar, asegurando los tipos correctos para Supabase
-        # Las CLAVES deben ser los NOMBRES DE COLUMNA EXACTOS de tu tabla Supabase.
-        # Si tu tabla Supabase tiene nombres de columna en minúsculas (ej. 'height'), usa minúsculas.
-        # Si son PascalCase ('Height'), usa PascalCase. Basado en tu error anterior de Supabase,
-        # parece que espera minúsculas, por ej. "height". Voy a asumir minúsculas aquí.
-        # ¡VERIFICA ESTO CONTRA TU TABLA REAL `fe_obesity_risk_classification`!
+        # Las CLAVES ("gender", "age", etc.) DEBEN coincidir con los nombres de columna en tu tabla de Supabase.
+        # La estructura de tu tabla Supabase que me mostraste usa snake_case (ej. family_history_with_overweight)
+        # o a veces solo una palabra en minúsculas (ej. gender, age, height, weight, mtrans).
+        # VOY A USAR MINÚSCULAS PARA TODAS LAS CLAVES que corresponden a las columnas de tu tabla.
         data_to_insert = {
             "gender": gender_db_map.get(input_payload.Gender, -1),
-            "age": input_payload.Age, # Pydantic ya lo tiene como int
-            
-            # Para columnas que son float en Pydantic PERO integer/smallint en Supabase:
-            "height": int(round(input_payload.Height)), 
-            "weight": int(round(input_payload.Weight)), # Si 'weight' es double precision en DB, quita int(round(...))
-            
+            "age": input_payload.Age,
+            "height": int(round(input_payload.Height)), # Tu tabla Supabase lo tiene como 'smallint'
+            "weight": int(round(input_payload.Weight)), # Tu tabla Supabase lo tiene como 'integer'
             "family_history_with_overweight": binary_db_map.get(input_payload.Family_History_with_Overweight, -1),
             "favc": binary_db_map.get(input_payload.FAVC, -1),
-            "fcvc": int(round(input_payload.FCVC)),
-            "ncp": int(round(input_payload.NCP)),
-            "caec": caec_db_map.get(input_payload.CAEC, -1),
-            "smoking": binary_db_map.get(input_payload.SMOKING, -1),
-            "ch2o": int(round(input_payload.CH2O)),
-            "scc": binary_db_map.get(input_payload.SCC, -1),
-            "faf": int(round(input_payload.FAF)),
-            "tue": int(round(input_payload.TUE)), # Pydantic es float ge=0, DB puede ser int
-            "calc": calc_db_map.get(input_payload.CALC, -1),
+            "fcvc": int(round(input_payload.FCVC)), # Tu tabla Supabase es 'integer'
+            "ncp": int(round(input_payload.NCP)),   # Tu tabla Supabase es 'integer'
+            "caec": caec_db_map.get(input_payload.CAEC, -1), # Tu tabla Supabase es 'smallint'
+            "smoking": binary_db_map.get(input_payload.SMOKING, -1), # Tu tabla Supabase es 'integer'
+            "ch2o": int(round(input_payload.CH2O)),  # Tu tabla Supabase es 'integer'
+            "scc": binary_db_map.get(input_payload.SCC, -1), # Tu tabla Supabase es 'integer'
+            "faf": int(round(input_payload.FAF)),    # Tu tabla Supabase es 'integer'
+            "tue": int(round(input_payload.TUE)),    # Tu tabla Supabase es 'integer'
+            "calc": calc_db_map.get(input_payload.CALC, -1), # Tu tabla Supabase es 'smallint'
             
-            "mtrans": input_payload.MTRANS, # Asumiendo que es TEXT en Supabase
+            # *** APLICANDO EL MAPA PARA MTRANS ***
+            "mtrans": mtrans_db_map.get(input_payload.MTRANS, -1), # Convierte string a int. Tu tabla Supabase es 'integer'.
             
-            "nobeyesdad": nobeyesdad_value, 
-            "bmi": prediction_data.bmi, # Asumiendo que es double precision en Supabase
+            "nobeyesdad": nobeyesdad_value, # Tu tabla Supabase es 'smallint'
+            "bmi": prediction_data.bmi, # Tu tabla Supabase es 'double precision', así que float está bien.
             "created_at": pd.Timestamp.now(tz='UTC').isoformat()
         }
         
         logging.info(f"Preparando inserción en Supabase (tabla '{settings.SUPABASE_TABLE_NAME}'). Payload FINAL: {data_to_insert}")
-        print(f"DEBUG (server/db_service): Payload FINAL enviado a Supabase: {data_to_insert}") # Para máxima visibilidad
+        # print(f"DEBUG (server/db_service): Payload FINAL enviado a Supabase: {data_to_insert}")
 
-        response = await supabase_client_instance.table(settings.SUPABASE_TABLE_NAME).insert(data_to_insert).execute()
+        response = supabase_client_instance.table(settings.SUPABASE_TABLE_NAME).insert(data_to_insert).execute()
         
         if hasattr(response, 'data') and response.data:
             logging.info(f"Predicción guardada en Supabase. Registros insertados: {len(response.data)}")
         else:
-            # A veces Supabase devuelve una lista vacía en 'data' para inserciones exitosas si no hay 'returning'
             logging.info(f"Guardado en Supabase completado (o sin error de API). Respuesta: {response}")
 
     except Exception as e:
