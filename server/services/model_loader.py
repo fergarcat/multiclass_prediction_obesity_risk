@@ -1,58 +1,47 @@
 # server/services/model_loader.py
-import joblib
-from pathlib import Path
-from typing import Any, Optional
-from ..core.config import settings
-from ..model.prediction_model import ObesityRiskModel # Importa la clase del modelo que definimos
 import logging
+from typing import Optional
+from ..core.config import settings
+from ..model.prediction_model import ObesityRiskModel # Esta es tu clase actualizada
 
-# Instancia global del modelo de ML
 obesity_model_instance: Optional[ObesityRiskModel] = None
 
 def load_ml_models():
-    """Carga los modelos ML y crea una instancia de ObesityRiskModel."""
     global obesity_model_instance
     try:
-        preprocessing_path = settings.PREPROCESSING_PIPELINE_FULL_PATH
-        model_path = settings.MODEL_PIPELINE_FULL_PATH
+        # Estas rutas vienen de config.py y apuntan a los NOMBRES DE ARCHIVO ORIGINALES
+        path_for_label_encoder = settings.PREPROCESSING_PIPELINE_FULL_PATH # contendrá label_encoder_nobeysdad.pkl
+        path_for_model_pipeline = settings.MODEL_PIPELINE_FULL_PATH  # contendrá nuevo_pipeline_completo_v1.pkl
 
-        if not preprocessing_path.exists():
-            raise FileNotFoundError(f"Archivo de preprocesador no encontrado: {preprocessing_path}")
-        if not model_path.exists():
-            raise FileNotFoundError(f"Archivo de modelo no encontrado: {model_path}")
+        if not path_for_label_encoder.exists():
+            # Hacemos que el LabelEncoder (disfrazado) sea crítico también
+            raise FileNotFoundError(f"Archivo LabelEncoder (esperado como '{path_for_label_encoder.name}') no encontrado: {path_for_label_encoder}")
+        if not path_for_model_pipeline.exists():
+            raise FileNotFoundError(f"Archivo de pipeline de modelo principal no encontrado: {path_for_model_pipeline}")
         
-        logging.info(f"Cargando preprocesador desde: {preprocessing_path}")
-        logging.info(f"Cargando modelo desde: {model_path}")
+        logging.info(f"Cargando LabelEncoder (desde archivo '{path_for_label_encoder.name}')")
+        logging.info(f"Cargando pipeline de modelo COMPLETO (desde archivo '{path_for_model_pipeline.name}')")
 
-        # Aquí creamos la instancia de tu ObesityRiskModel pasándole las rutas
-        obesity_model_instance = ObesityRiskModel(preprocessing_pipeline_path=str(preprocessing_path), 
-                                                model_pipeline_path=str(model_path))
-        logging.info("Todos los modelos cargados y la instancia de ObesityRiskModel está lista.")
+        obesity_model_instance = ObesityRiskModel(
+            label_encoder_path=str(path_for_label_encoder), # Le pasamos el archivo que ahora es el LabelEncoder
+            model_pipeline_path=str(path_for_model_pipeline) # Le pasamos el archivo que ahora es el Pipeline Completo
+        )
 
-    except (FileNotFoundError, RuntimeError) as e:
-        logging.critical(f"ERROR CRÍTICO al cargar modelos: {e}. El servicio de predicción no estará disponible.")
-        # Podemos re-lanzar o simplemente dejar la instancia como None.
-        # Para FastAPI Lifespan, es mejor manejarlo suavemente si la app puede arrancar sin ello,
-        # pero para el endpoint de predicción habrá un 503.
-        obesity_model_instance = None 
     except Exception as e:
-        logging.critical(f"ERROR INESPERADO al cargar modelos: {e}")
-        logging.exception("Detalles del error al cargar modelos:") # Imprime el stack trace
+        logging.critical(f"ERROR CRÍTICO al cargar modelos/encoder: {e}. El servicio de predicción no estará disponible.")
+        logging.exception("Detalles del error al cargar modelos/encoder:")
         obesity_model_instance = None
 
-
+# Las funciones get_obesity_model_instance, unload_ml_models, are_models_loaded_successfully pueden quedar iguales.
 def get_obesity_model_instance() -> ObesityRiskModel:
-    """Devuelve la instancia global del modelo de ML. Lanza un error si no está cargada."""
     if obesity_model_instance is None:
-        raise RuntimeError("El modelo de obesidad no está cargado. El servicio de predicción no está disponible.")
+        raise RuntimeError("El modelo de obesidad y/o encoder no están cargados. El servicio de predicción no está disponible.")
     return obesity_model_instance
 
 def unload_ml_models():
-    """Libera los modelos de la memoria."""
     global obesity_model_instance
     obesity_model_instance = None
-    logging.info("Modelos de ML descargados.")
+    logging.info("Modelos de ML y encoder descargados.")
 
 def are_models_loaded_successfully() -> bool:
-    """Comprueba si los modelos están cargados."""
     return obesity_model_instance is not None
