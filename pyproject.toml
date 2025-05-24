@@ -92,4 +92,6 @@ dependencies = [
     "pydantic",
     "zipp==3.21.0",
     "pydantic-settings>=2.9.1",
+    "uvicorn>=0.34.2",
+    "dash-bootstrap-components>=2.0.3",
 ]
