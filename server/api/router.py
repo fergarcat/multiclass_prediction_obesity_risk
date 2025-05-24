@@ -1,67 +1,49 @@
-from fastapi import APIRouter, HTTPException, Body, Depends
-from ..model.prediction_model import (
-    PredictionInput, PredictionOutput, Message, HealthCheckResponse
-)
-from ..services.prediction_service import make_prediction
+# server/api/router.py
+from fastapi import APIRouter, HTTPException, Body, Depends, status
+from ..model.prediction_model import PredictionRequest, PredictionResponse
+from ..core.schemas import Message, HealthCheckResponse
+from ..services.prediction_service import prediction_service_instance
 from ..services.model_loader import are_models_loaded_successfully
-# from ..services.db_service import get_supabase_client, save_prediction_to_db # Para después
-# from supabase_async_client import AsyncClient # Para después
+import logging
 
 router = APIRouter()
 
-# Health check (ya lo tienes y debería funcionar con la carga real)
+# Health check
 @router.get("/health", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check_endpoint():
     models_ready = are_models_loaded_successfully()
     if not models_ready:
-        raise HTTPException(status_code=503, detail="Modelos de ML no cargados o no listos.")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML no cargados o no listos.")
     return HealthCheckResponse(status="ok", message="Servicio operativo y modelos cargados.", models_loaded=True)
 
-# NUEVO ENDPOINT DE PREDICCIÓN
+# Endpoint de predicción
 @router.post(
-    "/predict",
-    response_model=PredictionOutput,
-    summary="Realiza una predicción del riesgo de obesidad",
+    "/prediction", # Cambiado de /predict a /prediction para ser consistente con el frontend
+    response_model=PredictionResponse,
+    summary="Realiza una predicción del riesgo de obesidad y la guarda en DB",
     tags=["Predictions"],
+    status_code=status.HTTP_200_OK, # Por defecto es 200 si la respuesta_model coincide
     responses={
-        400: {"model": Message, "description": "Datos de entrada inválidos o error de procesamiento"},
-        422: {"model": Message, "description": "Error de validación de entrada (FastAPI)"},
-        500: {"model": Message, "description": "Error interno del servidor"},
-        503: {"model": Message, "description": "Servicio no disponible (modelos no cargados)"},
+        status.HTTP_400_BAD_REQUEST: {"model": Message, "description": "Datos de entrada inválidos o error de procesamiento"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": Message, "description": "Error de validación de entrada (FastAPI)"},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": Message, "description": "Error interno del servidor"},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Message, "description": "Servicio no disponible (modelos no cargados)"},
     }
 )
 async def predict_obesity_risk(
-    input_data: PredictionInput = Body(..., examples=PredictionInput.model_config["json_schema_extra"]["examples"]),
-    # supabase: AsyncClient = Depends(get_supabase_client) # Para después
+    request_data: PredictionRequest = Body(...), # Usamos PredictionRequest aquí
 ):
-    if not are_models_loaded_successfully():
-        raise HTTPException(status_code=503, detail="Modelos de ML no están cargados o no están listos.")
-
+    # La comprobación de modelos cargados se hará dentro del prediction_service, que lanza RuntimeError
+    # si no están listos, y eso es capturado y mapeado a 503 por el try/except del endpoint.
     try:
-        # make_prediction ahora devuelve (categoría_string, índice_para_db)
-        predicted_category_string, predicted_index_for_db = await make_prediction(input_data)
+        # Llamamos a la instancia del servicio para hacer la predicción y el guardado
+        response = await prediction_service_instance.make_prediction(request_data)
+        return response
 
-        # TODO: Aquí iría la lógica para guardar en Supabase usando predicted_index_for_db
-        # if supabase and predicted_index_for_db is not None:
-        #     try:
-        #         await save_prediction_to_db(
-        #             client=supabase,
-        #             input_payload=input_data.model_dump(by_alias=True),
-        #             prediction_index=predicted_index_for_db # Enviar índice numérico
-        #         )
-        #     except Exception as db_e:
-        #         print(f"WARN: No se pudo guardar en Supabase: {db_e}")
-        # else:
-        #      print(f"DEBUG: Supabase no configurado o índice de predicción nulo ({predicted_index_for_db}). No se guarda.")
-
-
-        return PredictionOutput(obesity_risk_category=predicted_category_string)
-
-    except ValueError as ve: # Errores de procesamiento de predicción
-        raise HTTPException(status_code=400, detail=f"Error en datos o procesamiento: {str(ve)}")
-    except RuntimeError as rte: # Si los modelos fallan internamente
-        raise HTTPException(status_code=503, detail=str(rte))
-    except Exception as e:
-        import traceback
-        print(f"ERROR: Excepción inesperada en /predict: {e}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail="Ocurrió un error interno del servidor.")
+    except RuntimeError as e: # Error si los modelos no están cargados
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    except ValueError as ve: # Errores específicos del servicio
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error en datos o procesamiento: {str(ve)}")
+    except Exception as e: # Cualquier otro error inesperado
+        logging.error(f"ERROR: Excepción inesperada en /prediction: {e}", exc_info=True) # exc_info=True para el traceback
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Ocurrió un error interno del servidor.")

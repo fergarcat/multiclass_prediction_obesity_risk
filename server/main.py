@@ -1,61 +1,56 @@
-import logging
-from .core.config import settings, setup_logging
-
-# --- LLAMADA A LA CONFIGURACIÓN DE LOGGING ---
-LOGGING_LEVEL = logging.INFO
-setup_logging(log_level=LOGGING_LEVEL)
-# -----------------------------------------
-
+# server/main.py
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from .core.config import settings
-from .api.router import router as api_router
-from .services.model_loader import load_ml_models, unload_ml_models
-from .services.db_service import init_supabase_client, close_supabase_client
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager # Nuevo para el lifespan
+import logging
 
+from server.api.router import router as api_router
+from server.services.model_loader import load_ml_models, unload_ml_models
+from server.services.db_service import init_supabase_client, close_supabase_client
+from server.core.config import setup_logging # Para configurar logging al inicio
 
+# Configura el logging al inicio de la aplicación
+setup_logging()
 
+# Usa asynccontextmanager para manejar los recursos al inicio y cierre de la app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- Eventos de Inicio (Startup) ---
-    print(f"INFO:     Iniciando la aplicación: {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
-
-    print("INFO:     Cargando modelos de Machine Learning (simulado)...")
-    try:
-        load_ml_models() # Llama a nuestra función (simulada)
-    except Exception as e:
-        print(f"CRITICAL: Fallo al cargar modelos de ML (simulado): {e}")
-
-    print("INFO:     Inicializando cliente Supabase (simulado)...")
-    try:
-        await init_supabase_client() # Llama a nuestra función (simulada)
-    except Exception as e:
-        print(f"ERROR:    Fallo al inicializar cliente Supabase (simulado): {e}")
-
-    yield # La aplicación se ejecuta aquí
-
-    # --- Eventos de Apagado (Shutdown) ---
-    print("INFO:     Cerrando la aplicación FastAPI...")
+    logging.info("Iniciando aplicación. Ejecutando lifespan startup.")
+    # Cargar modelos ML
+    load_ml_models()
+    # Inicializar cliente Supabase
+    await init_supabase_client()
+    yield # Aquí la aplicación está "viva" y manejando solicitudes
+    logging.info("Apagando aplicación. Ejecutando lifespan shutdown.")
+    # Liberar recursos
     unload_ml_models()
     await close_supabase_client()
-    print("INFO:     Aplicación cerrada limpiamente (simulado).")
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.PROJECT_VERSION,
-    description="API para la predicción de riesgo de obesidad.",
-    lifespan=lifespan
+    title="Multiclass Obesity Risk Prediction API",
+    version="1.0.0",
+    description="API para predecir el riesgo de obesidad basado en datos de salud y guardar en Supabase.",
+    lifespan=lifespan # Integra el lifespan aquí
 )
 
-# Incluir el router de la API
-app.include_router(api_router) # Aquí están nuestros endpoints como /health
+# Configuración de CORS
+origins = [
+    "http://localhost",
+    "http://localhost:8050", # El puerto predeterminado de Dash
+    "http://127.0.0.1:8050",
+    "*" # Para desarrollo, permite todos los orígenes. AJUSTA EN PRODUCCIÓN.
+]
 
-@app.get("/", tags=["Root"])
-async def read_root():
-    return {
-        "message": f"Bienvenido a {settings.PROJECT_NAME}",
-        "docs": "/docs",
-        "health": "/health"
-    }
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Para poder ejecutar uvicorn server.main:app --reload desde la raíz del proyecto
+app.include_router(api_router) # Ahora usamos api_router que es el nombre correcto
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Obesity Risk Prediction API. Navigate to /docs for API documentation."}

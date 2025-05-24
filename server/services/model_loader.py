@@ -1,59 +1,58 @@
+# server/services/model_loader.py
 import joblib
 from pathlib import Path
-from typing import Any
-from ..core.config import settings # Importación relativa
+from typing import Any, Optional
+from ..core.config import settings
+from ..model.prediction_model import ObesityRiskModel # Importa la clase del modelo que definimos
+import logging
 
-_preprocessing_pipeline: Any = None
-_model_pipeline: Any = None
+# Instancia global del modelo de ML
+obesity_model_instance: Optional[ObesityRiskModel] = None
 
 def load_ml_models():
-    global _preprocessing_pipeline, _model_pipeline
+    """Carga los modelos ML y crea una instancia de ObesityRiskModel."""
+    global obesity_model_instance
     try:
-        preprocessor_path = settings.PREPROCESSING_PIPELINE_FULL_PATH
+        preprocessing_path = settings.PREPROCESSING_PIPELINE_FULL_PATH
         model_path = settings.MODEL_PIPELINE_FULL_PATH
 
-        if not preprocessor_path.exists():
-            raise FileNotFoundError(f"Archivo de preprocesador no encontrado en: {preprocessor_path}")
-        print(f"INFO:     Cargando preprocesador desde: {preprocessor_path}")
-        _preprocessing_pipeline = joblib.load(preprocessor_path)
-        print(f"INFO:     Preprocesador '{preprocessor_path.name}' cargado exitosamente.")
-
+        if not preprocessing_path.exists():
+            raise FileNotFoundError(f"Archivo de preprocesador no encontrado: {preprocessing_path}")
         if not model_path.exists():
-            raise FileNotFoundError(f"Archivo de modelo no encontrado en: {model_path}")
-        print(f"INFO:     Cargando modelo desde: {model_path}")
-        _model_pipeline = joblib.load(model_path)
-        print(f"INFO:     Modelo '{model_path.name}' cargado exitosamente.")
+            raise FileNotFoundError(f"Archivo de modelo no encontrado: {model_path}")
+        
+        logging.info(f"Cargando preprocesador desde: {preprocessing_path}")
+        logging.info(f"Cargando modelo desde: {model_path}")
 
-    except FileNotFoundError as e:
-        print(f"ERROR:    {e}")
-        # En un entorno de producción, podrías querer que la app no inicie si los modelos no cargan.
-        # Por ahora, para desarrollo, podríamos permitir que inicie pero el endpoint de predicción fallará.
-        # O puedes levantar un error para detenerlo:
-        raise RuntimeError(f"Error crítico al cargar modelos: {e}. La aplicación puede no iniciar completamente.")
+        # Aquí creamos la instancia de tu ObesityRiskModel pasándole las rutas
+        obesity_model_instance = ObesityRiskModel(preprocessing_pipeline_path=str(preprocessing_path), 
+                                                model_pipeline_path=str(model_path))
+        logging.info("Todos los modelos cargados y la instancia de ObesityRiskModel está lista.")
+
+    except (FileNotFoundError, RuntimeError) as e:
+        logging.critical(f"ERROR CRÍTICO al cargar modelos: {e}. El servicio de predicción no estará disponible.")
+        # Podemos re-lanzar o simplemente dejar la instancia como None.
+        # Para FastAPI Lifespan, es mejor manejarlo suavemente si la app puede arrancar sin ello,
+        # pero para el endpoint de predicción habrá un 503.
+        obesity_model_instance = None 
     except Exception as e:
-        print(f"ERROR:    Error inesperado al cargar modelos: {e}")
-        import traceback
-        traceback.print_exc()
-        raise RuntimeError(f"Error crítico al cargar modelos: {e}. La aplicación puede no iniciar completamente.")
+        logging.critical(f"ERROR INESPERADO al cargar modelos: {e}")
+        logging.exception("Detalles del error al cargar modelos:") # Imprime el stack trace
+        obesity_model_instance = None
 
-def get_preprocessing_pipeline() -> Any:
-    if _preprocessing_pipeline is None:
-        # Este error no debería ocurrir si load_ml_models se llamó y fue exitoso.
-        # Si load_ml_models falla y relanza una excepción, la app no debería llegar a este punto
-        # o el estado de "modelos cargados" sería falso.
-        raise RuntimeError("Pipeline de preprocesamiento no disponible. Verificar el inicio de la aplicación.")
-    return _preprocessing_pipeline
 
-def get_model_pipeline() -> Any:
-    if _model_pipeline is None:
-        raise RuntimeError("Pipeline de modelo no disponible. Verificar el inicio de la aplicación.")
-    return _model_pipeline
+def get_obesity_model_instance() -> ObesityRiskModel:
+    """Devuelve la instancia global del modelo de ML. Lanza un error si no está cargada."""
+    if obesity_model_instance is None:
+        raise RuntimeError("El modelo de obesidad no está cargado. El servicio de predicción no está disponible.")
+    return obesity_model_instance
 
-def unload_ml_models(): # Para la fase de shutdown del lifespan
-    global _preprocessing_pipeline, _model_pipeline
-    _preprocessing_pipeline = None
-    _model_pipeline = None
-    print("INFO:     Modelos de ML (reales) liberados.")
+def unload_ml_models():
+    """Libera los modelos de la memoria."""
+    global obesity_model_instance
+    obesity_model_instance = None
+    logging.info("Modelos de ML descargados.")
 
 def are_models_loaded_successfully() -> bool:
-    return _preprocessing_pipeline is not None and _model_pipeline is not None
+    """Comprueba si los modelos están cargados."""
+    return obesity_model_instance is not None
