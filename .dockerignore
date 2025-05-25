@@ -1,0 +1,48 @@
+# .dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+.idea/
+.vscode/
+*.egg-info/
+.DS_Store
+*.log
+*.log.*
+logs/
+*.coverage
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+build/
+dist/
+*.local
+htmlcov/
+*.db
+*.sqlite3
+*.csv.gz
+*.ipynb_checkpoints/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+docs/
+nuevi/ # Ignoramos la carpeta nuevi si ya hemos movido los pkl finales
+data/eda/ # Ignoramos los notebooks de EDA si no son necesarios en producción
+data/modeling/Models_benchmarking.ipynb # Ignoramos notebooks de modelado
+server/data/eda/
+server/data/modeling/Models_benchmarking.ipynb
+*.docx
+*.lock
+*.md # A menos que necesites el README dentro de la imagen
+
+# Mantener los datos y modelos que SÍ son necesarios para la app en producción
+# Por ejemplo, si 'train_cleaned.csv' es leído por algún script en producción, no lo ignores aquí.
+# Los archivos .pkl deben ser COPIADOS al Dockerfile, así que no los ignores aquí.

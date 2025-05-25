@@ -1,0 +1,49 @@
+# Name of the workflow as it appears in the GitHub Actions tab
+name: ML MultiClassification
+
+# Trigger the workflow on push or pull request to the 'main' branch
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  build-and-test:
+    # Use the latest Ubuntu-based runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up a specific Python version
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'  # Change this if your project uses a different version
+
+      # Step 3: Install Python dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Run linter to check code style using Ruff
+      - name: Lint code with Ruff
+        uses: chartboost/ruff-action@v1
+
+      # # Step 5: Run unit tests with pytest
+      # - name: Run tests with pytest
+      #   run: pytest  # Make sure your tests are in a 'tests/' directory
+
+      # Step 6: Audit installed packages for known security vulnerabilities
+      - name: Check for Python package vulnerabilities
+        uses: pypa/gh-action-pip-audit@v1.0.6
+
+      # Step 7 (Optional): Validate Jupyter notebooks to ensure they run without errors
+      - name: Validate Jupyter notebooks
+        run: |
+          pip install nbval
+          pytest --nbval notebooks/  # Adjust path if your notebooks are in a different folder

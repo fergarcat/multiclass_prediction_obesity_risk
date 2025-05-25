@@ -173,5 +173,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Github Workflows
-.github/workflows/
+
+# Kaggle
+kaggle.json
+.kaggle/
+.kaggle/competitions/
+.kaggle/datasets/
+.kaggle/kernels/
+.kaggle/notebooks/
+#Catboost
+catboost_info/
