@@ -11,6 +11,16 @@ from sklearn.preprocessing import FunctionTransformer, StandardScaler
 import numpy as np
 import pandas as pd
 import joblib
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
+
+project_root = Path(__file__).parent.parent.parent
+
+def load_train_csv(filename=os.getenv("CSV_TRAIN_FILENAME")):
+    file_path = project_root / "data" / ".kaggle" / filename     # Build absolut path
+    df = pd.read_csv(file_path)
+    return df
 
 # Define the row-level data transformer
 class CustomRowTransformer(BaseEstimator, TransformerMixin):
@@ -82,16 +92,16 @@ full_pipeline = Pipeline(steps=[
 ])
 
 # Define paths
-csv_file_name = "train.csv"
-current_dir = os.getcwd()
-parent_dir = os.path.dirname(current_dir)
 
-csv_file_path = os.path.join(parent_dir, ".kaggle", csv_file_name)
-pre_pkl_file_name = "preprocessing_pipeline.pkl"
-pre_pkl_path = os.path.join(parent_dir, "modeling", "pkl", pre_pkl_file_name)
+
+pre_pkl_file_name = os.getenv("ML_PREPROC_FILENAME")
+
+pre_pkl_path = project_root / "data" / "modeling" / "pkl" /pre_pkl_file_name     # Build absolut path
+print(f'Preprocessing pipeline will be saved to: {pre_pkl_path}')
+
 
 # Load the raw dataset
-df_original = pd.read_csv(csv_file_path)
+df_original = load_train_csv()
 
 # Fit the pipeline to the data
 full_pipeline.fit(df_original)

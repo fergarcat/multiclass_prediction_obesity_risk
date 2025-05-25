@@ -5,7 +5,7 @@ import logging
 
 from server.api.router import router as api_router
 from server.services.model_loader import load_ml_models, unload_ml_models
-from server.services.supabase_client import init_supabase_client  # ✅ Cambiado desde db_service
+from server.services.db_service import init_supabase_client, close_supabase_client
 from server.core.config import setup_logging
 
 setup_logging()
@@ -13,13 +13,9 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logging.info("Iniciando aplicación. Ejecutando lifespan startup.")
-    
-    # Carga de modelos y cliente Supabase
     load_ml_models()
-    init_supabase_client()
-    
+    await init_supabase_client()
     yield
-
     logging.info("Apagando aplicación. Ejecutando lifespan shutdown.")
     unload_ml_models()
     # No cerramos explícitamente Supabase, ya que el cliente HTTP se maneja internamente
@@ -50,4 +46,4 @@ app.include_router(api_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Obesity Risk Prediction API. Navigate to /docs for API documentation."}
+    return {"message": "Welcome to the Keep In Shape API. Navigate to /docs for API documentation."}

@@ -1,24 +1,20 @@
-# client/pages/home.py
-from dash import html, dcc, register_page # register_page debe estar aquí
+from dash import html, dcc, register_page
 import dash_bootstrap_components as dbc
 
-# Registro de la página - ASEGÚRATE QUE EL NOMBRE DEL MÓDULO (__name__) SEA CORRECTO
-# Y que todos los argumentos estén.
 register_page(
-    __name__,  # Esto identifica este módulo como una página
-    path='/',  # La URL para esta página
-    name="Home",  # Nombre para links autogenerados (si los usaras)
-    title="Welcome - PredictHealth Clinic" # Título de la pestaña del navegador
+    __name__,
+    path='/',
+    name="Home",
+    title="Welcome - Keep In Shape App"
 )
 
-# La función layout DEBE existir y devolver componentes Dash válidos.
 def layout():
     print("DEBUG (home.py): Rendering layout for / (Homepage)")
     return html.Div(className="page-container-style", children=[
         dbc.Row(
             dbc.Col(
                 html.Div([
-                    html.H1("Welcome to PredictHealth Clinic", className="app-title mb-3 display-4"),
+                    html.H1("Welcome to Keep In Shape App", className="app-title mb-3 display-4"),
                     html.P(
                         "Your state-of-the-art tool for health risk assessment. "
                         "Utilize our intelligent system for a personalized analysis of your obesity risk "

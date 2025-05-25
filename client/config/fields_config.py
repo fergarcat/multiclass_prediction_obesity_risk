@@ -1,6 +1,4 @@
-# client/config/fields_config.py
 def get_field_data():
-    # print("--- fields_config.py: get_field_data() IS BEING CALLED ---") # Puedes activar/desactivar
     data = {
         "Gender": {"label": "Gender:", "type": "dropdown", "options": ["Male", "Female"], "default": "Male"},
         "Age": {"label": "Age (years):", "type": "number", "default": 25, "min": 1, "max": 99},
@@ -19,5 +17,4 @@ def get_field_data():
         "CALC": {"label": "Alcohol consumption:", "type": "dropdown", "options": ["no", "Sometimes", "Frequently", "Always"], "default": "no"},
         "MTRANS": {"label": "Main transportation:", "type": "dropdown", "options": ["Public_Transportation", "Walking", "Automobile", "Bike", "Motorbike"], "default": "Public_Transportation"}
     }
-    # print(f"--- fields_config.py: data being returned (first 3 keys): {list(data.keys())[:3]}")
     return data
