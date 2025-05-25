@@ -89,5 +89,9 @@ dependencies = [
     "websocket-client==1.8.0",
     "werkzeug==3.0.6",
     "xgboost>=3.0.1",
+    "pydantic",
     "zipp==3.21.0",
+    "pydantic-settings>=2.9.1",
+    "uvicorn>=0.34.2",
+    "dash-bootstrap-components>=2.0.3",
 ]
