@@ -4,6 +4,7 @@ from ..model.prediction_model import PredictionResponse
 import logging
 import pandas as pd
 from supabase import create_client, Client
+from typing import Optional
 
 _supabase_client: Client | None = None
 
@@ -116,3 +117,51 @@ async def save_prediction_to_db(prediction_data: PredictionResponse):
     except Exception as e:
         logging.error(f"Error CRÍTICO al guardar predicción en Supabase: {e}")
         logging.exception("Detalles del error al guardar en Supabase (save_prediction_to_db):")
+
+# server/services/db_service.py (AÑADE ESTA FUNCIÓN)
+# ... (resto del archivo como lo tienes) ...
+
+async def get_tip_by_prediction_value(prediction_numeric_value: int) -> Optional[dict]:
+    """
+    Obtiene un consejo de Supabase basado en el valor numérico de la predicción.
+    Asume que tienes una tabla (ej. 'obesity_level_tips') con una columna 
+    que coincide con 'prediction_numeric_value' (ej. 'level_id')
+    y columnas para el consejo (ej. 'tip_header', 'tip_message').
+    """
+    supabase = get_supabase_client() # Tu función existente para obtener el cliente
+    
+    # >>> AJUSTA ESTOS NOMBRES DE TABLA Y COLUMNAS <<<
+    TIPS_TABLE_NAME = "tip_text" # El nombre de tu tabla de consejos con ID y DESCRIPTION
+    ID_COLUMN_IN_TIPS_TABLE = "id" # La columna en tu tabla de tips que tiene (1, 2, ..., 7)
+    HEADER_COLUMN_NAME_IN_TIPS_TABLE = "description" # La columna que quieres como header (era "description" en tu imagen)
+    TEXT_COLUMN_NAME_IN_TIPS_TABLE = "detailed_advice" #  NECESITAS UNA COLUMNA CON EL TEXTO DEL CONSEJO
+                                                       # O puedes usar la misma "description" para ambos si es corta.
+
+    if not TIPS_TABLE_NAME or not ID_COLUMN_IN_TIPS_TABLE or not TEXT_COLUMN_NAME_IN_TIPS_TABLE:
+        logging.warning("Nombres de tabla/columna de consejos no configurados para Supabase.")
+        return {"tip_header": "Recomendación General", "tip_text": "Consulte a un profesional para más detalles."}
+
+    try:
+        # .eq(columna_id_en_tabla_tips, valor_numerico_prediccion)
+        # .select("columna_header, columna_texto_consejo")
+        # .maybe_single() devuelve el primer registro o None si no hay coincidencias
+        response = supabase.table(TIPS_TABLE_NAME)\
+                           .select(f"{HEADER_COLUMN_NAME_IN_TIPS_TABLE}, {TEXT_COLUMN_NAME_IN_TIPS_TABLE}")\
+                           .eq(ID_COLUMN_IN_TIPS_TABLE, prediction_numeric_value)\
+                           .maybe_single().execute()
+
+        if response.data:
+            logging.info(f"Consejo encontrado para prediction_id {prediction_numeric_value}: {response.data}")
+            # Asegúrate de que las claves del diccionario devuelto coincidan con lo que espera PredictionResponse
+            return {
+                "tip_header": response.data.get(HEADER_COLUMN_NAME_IN_TIPS_TABLE, "Consejo"),
+                "tip_text": response.data.get(TEXT_COLUMN_NAME_IN_TIPS_TABLE, "Información no disponible.")
+            }
+        else:
+            logging.warning(f"No se encontró consejo para prediction_id {prediction_numeric_value} en la tabla '{TIPS_TABLE_NAME}'.")
+            return {"tip_header": "Consejo No Encontrado", "tip_text": "No hay un consejo específico para este resultado en la base de datos."}
+            
+    except Exception as e:
+        logging.error(f"Error obteniendo consejo de Supabase para prediction_id {prediction_numeric_value}: {e}")
+        logging.exception("Detalles del error de Supabase al obtener consejo:")
+        return {"tip_header": "Error de Consejos", "tip_text": "No se pudieron cargar las recomendaciones en este momento."}
