@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: . 
+      dockerfile: Dockerfile.server
+    container_name: multiclass_pred_backend
+    env_file:
+      - .env 
+    ports:
+      - "8000:8000"
+    # Quita los volúmenes de código para la imagen final,
+    # ya que el código se copia con COPY . /app en el builder.
+    # Para desarrollo local con hot-reload, puedes añadirlos,
+    # pero asegúrate que las rutas sean relativas al contexto del build:
+    # volumes:
+    #   - ./server:/app/server
+    #   - ./data/modeling/pkl:/app/data/modeling/pkl
+    #   - ./pipeline_utils.py:/app/pipeline_utils.py
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: multiclass_pred_frontend
+    ports:
+      - "8050:8050"
+    depends_on:
+      - backend
+    environment:
+      - FASTAPI_PREDICTION_URL=http://backend:8000/prediction 
+    # Quita los volúmenes de código para la imagen final.
+    # volumes:
+    #   - ./client:/app/client
+    #   - ./run_client.py:/app/run_client.py
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

@@ -1,0 +1,27 @@
+# DATA AND MODELING
+CSV_FOLDER = "\data"
+CSV_TRAIN_FILENAME = "abcd.csv"
+ML_PREPROC_FILENAME = "abcd.pkl"
+
+#FRONTEND
+user=postgres.abcdefghijklmno
+password=abcd1234
+host=abcd.supabase.co
+port=XXXX
+dbname= postgres
+DATABASE_URL=postgresql://postgres
+
+#BACKEND
+PROJECT_NAME="Project Name"
+PROJECT_VERSION="0.1.0"
+##Model Paths (relativas a la raíz del proyecto multiclass_prediction_obesity_risk/),
+PREPROCESSING_PIPELINE_PATH="data/modeling/pkl/abcd.pkl"
+MODEL_PIPELINE_PATH="data/modeling/pkl/abcd.pkl"
+##Supabase (opcional, llenar si se usa),
+SUPABASE_URL=""
+##service_role key si haces operaciones que requieren permisos elevados, o anon key si es apropiado,
+SUPABASE_KEY="" 
+##Tu tabla de predicciones
+SUPABASE_TABLE_NAME="tablename"
+
+#uvicorn server.main:app --reload --host 127.0.0.1 --port 8000,

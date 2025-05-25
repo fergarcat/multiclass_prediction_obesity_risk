@@ -1,0 +1,50 @@
+# Dockerfile.server
+
+# --- Etapa Builder (para instalar dependencias) ---
+FROM python:3.13-slim AS builder 
+# O la versión de Python que estés usando (ej. 3.13-slim, pero sé consistente)
+
+# Establece el directorio de trabajo DENTRO de esta etapa builder
+WORKDIR /build_app 
+
+# Copia solo requirements.txt para aprovechar el caché de Docker
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copia TODO el contexto de tu proyecto al directorio de trabajo del builder
+# (Esto incluye 'server', 'client', 'data', 'pipeline_utils.py', etc., según .dockerignore)
+COPY . /build_app
+
+
+# --- Etapa Final (para la imagen de producción) ---
+FROM python:3.13-slim AS final
+
+# Variables de entorno
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+# Establece PYTHONPATH para incluir /app donde estará el código principal
+ENV PYTHONPATH=/app
+
+# Directorio de trabajo para la aplicación en ejecución
+WORKDIR /app
+
+# Copiar las dependencias instaladas desde la etapa builder
+# Asegúrate que la versión de Python en la ruta coincida con la del builder
+COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Copiar selectivamente el código necesario para el SERVIDOR desde la etapa builder
+# El origen ahora es /build_app porque es donde copiamos todo en el builder.
+# El destino es /app, que es nuestro nuevo WORKDIR y PYTHONPATH raíz.
+COPY --from=builder /build_app/server /app/server
+COPY --from=builder /build_app/data/modeling/pkl /app/data/modeling/pkl
+# Si pipeline_utils.py es usado por los .pkl Y estaba en la raíz de tu proyecto:
+# COPY --from=builder /build_app/pipeline_utils.py /app/pipeline_utils.py
+
+# El comando para ejecutar Uvicorn.
+# Como WORKDIR es /app y PYTHONPATH incluye /app, `server.main:app` debería resolverse correctamente.
+# Python buscará el paquete 'server' dentro de /app, luego 'main.py' y 'app'.
+CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Si `--reload` sigue dando problemas en Docker, considera quitarlo para la prueba final
+# CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,3 +1,4 @@
+
 # 🧬 Keep In Shape: Multiclass Prediction of Obesity Risk 🩺
 
 <div align="center">
@@ -176,4 +177,11 @@ Contributions are welcome! To contribute:
 
 If you have any questions, feel free to open an issue in the repository or contact us.
 
+
+=======
+# p7-1
+Machine learning multi label classification
+
+# DeepWiki
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/fergarcat/multiclass_prediction_obesity_risk)
 
