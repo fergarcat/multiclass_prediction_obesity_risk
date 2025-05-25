@@ -1,4 +1,3 @@
-# client/app.py
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
@@ -49,4 +48,4 @@ app.layout = html.Div([
 ], id="app-main-layout", style={'display': 'flex', 'flexDirection': 'column', 'minHeight': '100vh'})
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8050)
+    app.run(debug=True, host='0.0.0.0', port=8050)
