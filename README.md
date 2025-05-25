@@ -38,7 +38,7 @@ Check out the [demo](https://www.canva.com/design/DAGoNogViFQ/Yhy9vFsc4LH1tYbLRM
 
 Details about:
 - Exploratory Data Analysis
-- Algorithm experimentation (e.g., XGBoost, SVM, KNN, Random Forest)
+- Algorithm experimentation XGBoost
 - Model evaluation metrics
 - Development of the web application
 
@@ -49,7 +49,7 @@ Details about:
 - Interactive dashboard
 - User scenario simulator
 - Personalized health recommendations
-- Persistent prediction history (SQLite)
+- Persistent prediction history (supabase)
 - Intuitive user interface
 - Dockerized deployment
 
@@ -123,7 +123,13 @@ pip install -r requirements.txt
 ### 4️⃣ Run the Dashboard
 
 ```bash
-fastapi run app.py
+python run_client.py
+```
+
+### 5️⃣ Run test
+
+```bash
+python -m unittest discover tests
 ```
 
 
