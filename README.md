@@ -28,8 +28,6 @@ Welcome to **Keep In Shape**, an application that uses multiclass ML techniques 
 
 ## 🧠 Intelligence for Health
 
-Short summary of what the app does using AI to assess health risks and provide actionable feedback.
-
 Check out the [demo](https://www.canva.com/design/DAGoNogViFQ/Yhy9vFsc4LH1tYbLRMXkWw/edit?utm_content=DAGoNogViFQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
  of our app
 
