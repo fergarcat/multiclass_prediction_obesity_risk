@@ -2,7 +2,7 @@
 # 🧬 Keep In Shape: Multiclass Prediction of Obesity Risk 🩺
 
 <div align="center">
-    <img src="client/media/obesity_logo.png" alt="ObesityRiskML Logo" width="300">
+    <img src="https://github.com/fergarcat/multiclass_prediction_obesity_risk/blob/main/client/assets/logo/Keep-caqui-full-256.png" alt="ObesityRiskML Logo" width="300">
     <br><br>
     <img src="https://img.shields.io/badge/Salud-IA%20Predictiva-4ECDC4?style=for-the-badge&logo=python&logoColor=white" alt="Salud IA Predictiva">
     <img src="https://img.shields.io/badge/Clasificación-Multiclase-orange?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="Clasificación Multiclase">
@@ -22,7 +22,7 @@ Welcome to **Keep In Shape**, an application that uses multiclass ML techniques 
 4. [⚙️ Tech Stack](#️-tech-stack)
 5. [📁 Project Structure](#-project-structure)
 6. [🚀 Installation & Usage](#-installation--usage)
-7. [📊 Application Overview](#-application-overview)
+7. [📊 About our model](#-about-our-model)
 8. [👥 Development Team](#-development-team)
 9. [🤝 Contributing](#-contributing)
 
@@ -42,6 +42,8 @@ Details about:
 - Algorithm experimentation XGBoost
 - Model evaluation metrics
 - Development of the web application
+- Please visit our [technical report](https://github.com/fergarcat/multiclass_prediction_obesity_risk/blob/main/docs/informe-obesidad.docx) for a detailed overview of the project.
+
 
 ---
 
@@ -58,7 +60,16 @@ Details about:
 
 ## ⚙️ Tech Stack
 
-Badges or list including: Python, Streamlit, Pandas, NumPy, scikit-learn, XGBoost, SQLAlchemy, Matplotlib, Seaborn, Docker.
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Dash](https://img.shields.io/badge/Dash-000000?style=for-the-badge&logo=plotly&logoColor=white)](https://dash.plotly.com/)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-EC6B24?style=for-the-badge&logo=github&logoColor=white)](https://xgboost.readthedocs.io/)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-DB291F?style=for-the-badge&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-11557C?style=for-the-badge&logo=plotly&logoColor=white)](https://matplotlib.org/)
+[![Seaborn](https://img.shields.io/badge/Seaborn-4C8CBF?style=for-the-badge&logo=python&logoColor=white)](https://seaborn.pydata.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 ---
 
@@ -121,25 +132,67 @@ pip install -r requirements.txt
 > 💡 **TIP:**  
 > Use `pip list` to see all installed dependencies.
 
-### 4️⃣ Run the Dashboard
+### 4️⃣ Set Up Environment Variables
+
+Duplicate the `env_example` file, rename it to `.env`
+
+### 5️⃣ Run the Dashboard
 
 ```bash
 python run_client.py
 ```
 
-### 5️⃣ Run test
+### 6️⃣ 🚀 Deploy with Docker
+
+Run the following command to build and start the containers:
+
+```bash
+docker-compose up --build
+```
+
+### 7️⃣ Run test
 
 ```bash
 python -m unittest discover tests
 ```
 
 
-## 📊 Application Overview
-Dashboard – View obesity-related metrics and predictions.
+## 📊 About our model
 
-Simulator – Test different lifestyle configurations.
+### We compared several models to determine which one performed best. You can see the results in this [notebook](https://github.com/fergarcat/multiclass_prediction_obesity_risk/blob/main/server/model/prediction_model.py).
 
-History – Review and analyze past predictions.
+|        Model        |      Accuracy      |     Precision      |       Recall       |      F1-Score      | Train Time (s) | Overfitting |
+|---------------------|--------------------|--------------------|--------------------|--------------------|----------------|-------------|
+|       XGBoost       | 0.9073             | 0.9070             | 0.9073             | 0.9071             |     2.4346     |   0.0769    |
+|      CatBoost       | 0.9061             | 0.9056             | 0.9061             | 0.9058             |    35.4323     |   0.0483    |
+|      LightGBM       | 0.9051             | 0.9048             | 0.9051             | 0.9049             |     4.7564     |   0.0711    |
+|    Random Forest    | 0.9037             | 0.9030             | 0.9037             | 0.9031             |     3.8831     |   0.0962    |
+|      SVM (RBF)      | 0.8832             | 0.8822             | 0.8832             | 0.8826             |     5.1034     |   0.0137    |
+|    SVM (Linear)     | 0.8697             | 0.8684             | 0.8697             | 0.8688             |     5.1625     |  -0.0029    |
+| Logistic Regression | 0.8639             | 0.8624             | 0.8639             | 0.8629             |     0.7557     |  -0.0013    |
+|    Decision Tree    | 0.8408             | 0.8404             | 0.8408             | 0.8404             |     0.1659     |   0.1591    |
+|         KNN         | 0.7936             | 0.7906             | 0.7936             | 0.7908             |     0.2451     |   0.0574    |
+|     Naive Bayes     | 0.7755             | 0.7710             | 0.7755             | 0.7691             |     0.0260     |  -0.0024    |
+
+----
+
+### We identified these two models as optimal.
+
+|             Model              |      Accuracy      |     Precision      |       Recall       |      F1-Score      | Train Time (s) | Overfitting |
+|--------------------------------|--------------------|--------------------|--------------------|--------------------|----------------|-------------|
+|       XGBoost (Adjusted)       | 0.9053             | 0.9048             | 0.9053             | 0.9050             |     5.4682     |   0.0097    |
+| Logistic Regression (Adjusted) | 0.8639             | 0.8639             | 0.8639             | 0.8633             |     0.7708     |   0.0002    |
+
+
+-----
+
+### Finally, we retrained the fastest model to reduce overfitting.
+
+|      Model       |     Accuracy      |     Precision     |      Recall       |      F1-Score      | Train Time (s) | Overfitting |
+|------------------|-------------------|-------------------|-------------------|--------------------|----------------|-------------|
+| XGBoost + Optuna | 0.9118            | 0.9117            | 0.9118            | 0.9116             |     4.1328     |   0.0185    |
+
+------
 
 ## 👥 Development Team
 
@@ -176,12 +229,3 @@ Contributions are welcome! To contribute:
 ## 🚀 Thank You for Using Keep In Shape!
 
 If you have any questions, feel free to open an issue in the repository or contact us.
-
-
-=======
-# p7-1
-Machine learning multi label classification
-
-# DeepWiki
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/fergarcat/multiclass_prediction_obesity_risk)
-
